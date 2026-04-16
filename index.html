@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bangalore Bullsharks — MateROV 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    :root {
+      --navy:    #0d1b2a;
+      --navy2:   #112236;
+      --navy3:   #162d44;
+      --card:    #0f2035;
+      --border:  #1e3a56;
+      --blue:    #3b8fd4;
+      --blue2:   #5aabf0;
+      --white:   #e8f0f8;
+      --muted:   #6b8caa;
+      --done:    #2ecc71;
+      --warn:    #e67e22;
+
+      --t1: #3b8fd4;
+      --t2: #9b59b6;
+      --t3: #1abc9c;
+      --t5: #e67e22;
+      --t6: #e74c3c;
+      --t7: #f1c40f;
+      --ts: #95a5a6;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--navy);
+      color: var(--white);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 80% 40% at 50% -10%, rgba(59,143,212,0.12) 0%, transparent 70%),
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 39px,
+          rgba(30,58,86,0.25) 39px,
+          rgba(30,58,86,0.25) 40px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          transparent,
+          transparent 39px,
+          rgba(30,58,86,0.25) 39px,
+          rgba(30,58,86,0.25) 40px
+        );
+    }
+
+    /* ── HEADER ── */
+    header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 28px 40px 20px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(13,27,42,0.85);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    header img {
+      width: 64px;
+      height: 64px;
+      object-fit: contain;
+      filter: drop-shadow(0 0 12px rgba(59,143,212,0.5));
+    }
+    .header-text h1 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.9rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      color: var(--white);
+      text-transform: uppercase;
+    }
+    .header-text h1 span { color: var(--blue2); }
+    .header-text p {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+      margin-top: 2px;
+    }
+    .header-right {
+      margin-left: auto;
+      text-align: right;
+    }
+    .countdown {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+    }
+    .countdown strong {
+      font-size: 1.1rem;
+      color: var(--blue2);
+      display: block;
+      letter-spacing: 0.15em;
+    }
+
+    /* ── SCORE BANNER ── */
+    .score-banner {
+      margin: 28px 40px 0;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    .score-banner-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px;
+      background: rgba(59,143,212,0.08);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+    }
+    .score-banner-header h2 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--blue2);
+    }
+    .score-banner-header .toggle-icon {
+      margin-left: auto;
+      font-size: 0.8rem;
+      color: var(--muted);
+      transition: transform 0.2s;
+    }
+    .score-banner-header.open .toggle-icon { transform: rotate(180deg); }
+
+    .score-grid {
+      display: none;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 1px;
+      background: var(--border);
+    }
+    .score-grid.open { display: grid; }
+
+    .score-cell {
+      background: var(--card);
+      padding: 12px 18px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .score-cell span:first-child {
+      font-size: 0.78rem;
+      color: var(--muted);
+      font-family: 'DM Sans', sans-serif;
+    }
+    .score-cell .pts {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--blue2);
+      white-space: nowrap;
+    }
+    .score-cell.total {
+      background: rgba(59,143,212,0.1);
+      grid-column: 1 / -1;
+    }
+    .score-cell.total span:first-child { color: var(--white); font-weight: 600; }
+    .score-cell.total .pts { color: var(--done); font-size: 1rem; }
+
+    /* ── REGIONAL DATE ── */
+    .regional-bar {
+      margin: 16px 40px 0;
+      background: rgba(230,126,34,0.1);
+      border: 1px solid rgba(230,126,34,0.35);
+      border-radius: 8px;
+      padding: 10px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.78rem;
+      color: var(--warn);
+      letter-spacing: 0.06em;
+    }
+    .regional-bar .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: var(--warn);
+      box-shadow: 0 0 8px var(--warn);
+      animation: pulse 1.5s infinite;
+      flex-shrink: 0;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; } 50% { opacity: 0.3; }
+    }
+
+    /* ── TEAMS GRID ── */
+    .teams-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+      gap: 20px;
+      padding: 28px 40px 60px;
+    }
+
+    .team-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s, transform 0.2s;
+      animation: fadeUp 0.4s ease both;
+    }
+    .team-card:hover {
+      transform: translateY(-2px);
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .team-card:nth-child(1) { animation-delay: 0.05s; }
+    .team-card:nth-child(2) { animation-delay: 0.10s; }
+    .team-card:nth-child(3) { animation-delay: 0.15s; }
+    .team-card:nth-child(4) { animation-delay: 0.20s; }
+    .team-card:nth-child(5) { animation-delay: 0.25s; }
+    .team-card:nth-child(6) { animation-delay: 0.30s; }
+    .team-card:nth-child(7) { animation-delay: 0.35s; }
+
+    .team-card-header {
+      padding: 16px 20px 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      border-bottom: 1px solid var(--border);
+    }
+    .team-accent {
+      width: 4px;
+      border-radius: 4px;
+      align-self: stretch;
+      flex-shrink: 0;
+      min-height: 36px;
+    }
+    .team-meta { flex: 1; }
+    .team-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.62rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+    .team-name {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      color: var(--white);
+      text-transform: uppercase;
+    }
+    .progress-bar-wrap {
+      margin-top: 8px;
+      height: 3px;
+      background: var(--border);
+      border-radius: 2px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 2px;
+      transition: width 0.4s ease;
+    }
+    .progress-label {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.6rem;
+      color: var(--muted);
+      margin-top: 4px;
+      letter-spacing: 0.08em;
+    }
+
+    /* ── TASKS ── */
+    .task-list { padding: 16px 20px; }
+
+    .task-item {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      padding: 10px 12px;
+      border-radius: 7px;
+      margin-bottom: 6px;
+      transition: background 0.15s;
+      cursor: pointer;
+    }
+    .task-item:last-child { margin-bottom: 0; }
+    .task-item:hover { background: rgba(255,255,255,0.03); }
+    .task-item.checked { opacity: 0.55; }
+
+    .task-checkbox {
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--border);
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 1px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: border-color 0.2s, background 0.2s;
+      position: relative;
+    }
+    .task-item.checked .task-checkbox {
+      border-color: var(--done);
+      background: var(--done);
+    }
+    .task-checkbox svg {
+      width: 11px;
+      height: 11px;
+      stroke: var(--navy);
+      stroke-width: 2.5;
+      fill: none;
+      opacity: 0;
+      transform: scale(0.6);
+      transition: opacity 0.15s, transform 0.15s;
+    }
+    .task-item.checked .task-checkbox svg {
+      opacity: 1;
+      transform: scale(1);
+    }
+
+    .task-text {
+      font-size: 0.85rem;
+      line-height: 1.45;
+      color: var(--white);
+    }
+    .task-item.checked .task-text {
+      text-decoration: line-through;
+      color: var(--muted);
+    }
+
+    /* ── RESOURCES ── */
+    .resources-section {
+      margin: 0 40px 60px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      overflow: hidden;
+    }
+    .resources-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 20px;
+      background: rgba(59,143,212,0.07);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+      user-select: none;
+    }
+    .resources-header h2 {
+      font-family: 'Rajdhani', sans-serif;
+      font-size: 0.95rem;
+      font-weight: 700;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--blue2);
+    }
+    .resources-header .toggle-icon {
+      margin-left: auto;
+      font-size: 0.8rem;
+      color: var(--muted);
+      transition: transform 0.2s;
+    }
+    .resources-header.open .toggle-icon { transform: rotate(180deg); }
+
+    .resources-grid {
+      display: none;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1px;
+      background: var(--border);
+    }
+    .resources-grid.open { display: grid; }
+
+    .resource-item {
+      background: var(--card);
+      padding: 14px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      transition: background 0.15s;
+    }
+    .resource-item:hover { background: rgba(59,143,212,0.06); }
+    .resource-tag {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.58rem;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+    .resource-link {
+      font-size: 0.82rem;
+      color: var(--blue2);
+      text-decoration: none;
+      font-weight: 500;
+      line-height: 1.3;
+    }
+    .resource-link:hover { text-decoration: underline; color: var(--white); }
+
+    /* ── LOADING STATE ── */
+    .loading-overlay {
+      position: fixed;
+      inset: 0;
+      background: var(--navy);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      gap: 16px;
+      z-index: 999;
+      transition: opacity 0.4s;
+    }
+    .loading-overlay.hidden { opacity: 0; pointer-events: none; }
+    .spinner {
+      width: 36px; height: 36px;
+      border: 3px solid var(--border);
+      border-top-color: var(--blue2);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .loading-overlay p {
+      font-family: 'Share Tech Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.12em;
+    }
+
+    @media (max-width: 700px) {
+      header { padding: 16px 20px; }
+      header img { width: 48px; height: 48px; }
+      .header-text h1 { font-size: 1.3rem; }
+      .score-banner, .regional-bar, .teams-grid, .resources-section { margin-left: 16px; margin-right: 16px; }
+      .teams-grid { padding: 20px 16px 40px; grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loadingOverlay">
+  <div class="spinner"></div>
+  <p>LOADING MISSION DATA...</p>
+</div>
+
+<!-- HEADER -->
+<header>
+  <img src="logo.png" alt="Bangalore Bullsharks" />
+  <div class="header-text">
+    <h1>BANGALORE <span>BULLSHARKS</span></h1>
+    <p>MATE ROV 2026 — RANGER CLASS — MISSION DASHBOARD</p>
+  </div>
+  <div class="header-right">
+    <div class="countdown">
+      REGIONAL IN<strong id="daysLeft">—</strong>DAYS
+    </div>
+  </div>
+</header>
+
+<!-- REGIONAL ALERT -->
+<div class="regional-bar">
+  <div class="dot"></div>
+  REGIONAL COMPETITION — FIRST WEEKEND OF MAY 2026 &nbsp;|&nbsp; TARGET: FULL SCORE &nbsp;|&nbsp; TOTAL AVAILABLE: 745 PTS
+</div>
+
+<!-- SCORE BANNER -->
+<div class="score-banner">
+  <div class="score-banner-header" id="scoreBannerToggle">
+    <h2>📊 &nbsp;Competition Scoring Reference</h2>
+    <span class="toggle-icon">▼</span>
+  </div>
+  <div class="score-grid" id="scoreGrid">
+    <div class="score-cell"><span>Task 1 — Coral Garden</span><span class="pts">85 pts</span></div>
+    <div class="score-cell"><span>Task 2 — SmartAtlantic</span><span class="pts">135 pts</span></div>
+    <div class="score-cell"><span>Task 3 — Wind Platform</span><span class="pts">60 pts</span></div>
+    <div class="score-cell"><span>Task 4 — Float (Ice)</span><span class="pts">70 pts</span></div>
+    <div class="score-cell"><span>Weight Bonus</span><span class="pts">10 pts</span></div>
+    <div class="score-cell"><span>Org. Effectiveness</span><span class="pts">10 pts</span></div>
+    <div class="score-cell"><span>JSEA</span><span class="pts">5 pts</span></div>
+    <div class="score-cell"><span>Technical Documentation</span><span class="pts">100 pts</span></div>
+    <div class="score-cell"><span>Engineering Presentation</span><span class="pts">100 pts</span></div>
+    <div class="score-cell"><span>Marketing Display</span><span class="pts">50 pts</span></div>
+    <div class="score-cell"><span>Company Spec Sheet</span><span class="pts">20 pts</span></div>
+    <div class="score-cell"><span>Corporate Responsibility</span><span class="pts">20 pts</span></div>
+    <div class="score-cell"><span>Safety Inspection</span><span class="pts">80 pts</span></div>
+    <div class="score-cell"><span>Time Bonus</span><span class="pts">variable</span></div>
+    <div class="score-cell total"><span>TOTAL POSSIBLE</span><span class="pts">745 pts</span></div>
+  </div>
+</div>
+
+<!-- TEAMS GRID -->
+<div class="teams-grid" id="teamsGrid"></div>
+
+<!-- RESOURCES -->
+<div class="resources-section">
+  <div class="resources-header" id="resourcesToggle">
+    <h2>🔗 &nbsp;Competition Resources</h2>
+    <span class="toggle-icon">▼</span>
+  </div>
+  <div class="resources-grid" id="resourcesGrid">
+    <div class="resource-item">
+      <span class="resource-tag">All Teams</span>
+      <a class="resource-link" href="https://materovcompetition.org/ranger" target="_blank">Ranger Class — All Resources</a>
+    </div>
+    <div class="resource-item">
+      <span class="resource-tag">All Teams</span>
+      <a class="resource-link" href="https://20693798.fs1.hubspotusercontent-na1.net/hubfs/20693798/2026/Manuals/2026%20RANGER%20Manual_updated_12_17_Cover.pdf" target="_blank">Ranger Class Full Competition Manual</a>
+    </div>
+    <div class="resource-item">
+      <span class="resource-tag">All Teams — Scoresheet</span>
+      <a class="resource-link" href="https://20693798.fs1.hubspotusercontent-na1.net/hubfs/20693798/2026/Product%20Demo/2026%20RANGER%20class%20product%20demo%20scoresheet%20REGIONAL%20UPDATED.pdf" target="_blank">Regional Score Sheet (Product Demo)</a>
+    </div>
+    <div class="resource-item">
+      <span class="resource-tag">Technical Documentation Team</span>
+      <a class="resource-link" href="https://20693798.fs1.hubspotusercontent-na1.net/hubfs/20693798/2026/Scoresheets/Technical%20Documentation/2026_TechnicalDocumentation_EXPNRN_PrintableScoreSheet_Color_v1.pdf" target="_blank">Technical Documentation Guidelines</a>
+    </div>
+    <div class="resource-item">
+      <span class="resource-tag">Engineering Presentation Team</span>
+      <a class="resource-link" href="https://20693798.fs1.hubspotusercontent-na1.net/hubfs/20693798/2026/Scoresheets/Engineering%20Presentation/2026_EngineeringPresentation_EXPNRNNV_ScoringCriteria_v0.pdf" target="_blank">Engineering Presentation Guidelines</a>
+    </div>
+    <div class="resource-item">
+      <span class="resource-tag">Safety Check Team</span>
+      <a class="resource-link" href="https://20693798.fs1.hubspotusercontent-na1.net/hubfs/20693798/2026/Scoresheets/Safety%20Score%20Sheets/2026%20Onsite%20Safety%20Inspection%20RANGER.pdf" target="_blank">Safety Guidelines</a>
+    </div>
+    <div class="resource-item">
+      <span class="resource-tag">Safety Check Team</span>
+      <a class="resource-link" href="https://20693798.fs1.hubspotusercontent-na1.net/hubfs/20693798/2026/Scoresheets/JSEA%20updated.pdf" target="_blank">JSEA Guidelines</a>
+    </div>
+    <div class="resource-item">
+      <span class="resource-tag">Float Team</span>
+      <a class="resource-link" href="https://20693798.fs1.hubspotusercontent-na1.net/hubfs/20693798/2026/2026%20MATE%20Floats%20Preview%20Mission_RANGER_PIONEER_FINAL_Updated_10_1.pdf" target="_blank">Float Detailed Task Document</a>
+    </div>
+    <div class="resource-item">
+      <span class="resource-tag">Frame / Software Team</span>
+      <a class="resource-link" href="https://cad.onshape.com/documents/d373141247725566e443ab57/w/a9b7dc89f21b778fff130e93/e/3258675fd8fc60a62be58e2d" target="_blank">Competition Setup 3D Model (OnShape)</a>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── SUPABASE CONFIG ──
+const SUPABASE_URL = 'https://azibzkmdwajhjygqjrxb.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF6aWJ6a21kd2FqaGp5Z3FqcnhiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzYzMDM0MjAsImV4cCI6MjA5MTg3OTQyMH0.C5EZaabM3oVymn2KW2boxPN3KjhiZHGOnJJxTwTajV0';
+const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ── TEAM & TASK DATA ──
+const TEAMS = [
+  {
+    id: 't1',
+    label: 'Team 01',
+    name: 'Frame, Motors & Control Box',
+    accent: 'var(--t1)',
+    tasks: [
+      { id: 't1_1', text: 'Test all motors and finalize motor selection' },
+      { id: 't1_2', text: 'Assemble the ROV frame' },
+    ]
+  },
+  {
+    id: 't2',
+    label: 'Team 02',
+    name: 'Camera Vision & 3D Modelling',
+    accent: 'var(--t2)',
+    tasks: [
+      { id: 't2_1', text: 'Order parts to send camera feed to laptop' },
+      { id: 't2_2', text: 'Find and evaluate photogrammetry software for Task 1.2 coral modelling' },
+    ]
+  },
+  {
+    id: 't3',
+    label: 'Team 03',
+    name: 'Float Team',
+    accent: 'var(--t3)',
+    tasks: [
+      { id: 't3_1', text: 'Re-test all float parts from last year to check functionality' },
+    ]
+  },
+  {
+    id: 't5',
+    label: 'Team 05',
+    name: 'Technical Documentation',
+    accent: 'var(--t5)',
+    tasks: [
+      { id: 't5_1', text: 'Create the TDP document and share the link with the team' },
+      { id: 't5_2', text: 'Add section headings and write the introduction' },
+    ]
+  },
+  {
+    id: 't6',
+    label: 'Team 06',
+    name: 'Engineering Presentation',
+    accent: 'var(--t6)',
+    tasks: [
+      { id: 't6_1', text: 'Create a shared script document and share the link' },
+      { id: 't6_2', text: 'Draft a rough order / structure for the presentation' },
+    ]
+  },
+  {
+    id: 't7',
+    label: 'Team 07',
+    name: 'Marketing Display',
+    accent: 'var(--t7)',
+    tasks: [
+      { id: 't7_1', text: 'Create the poster working document and share the link' },
+      { id: 't7_2', text: 'Take necessary photos to use on the poster' },
+    ]
+  },
+  {
+    id: 'ts',
+    label: 'Safety',
+    name: 'Safety Check Team',
+    accent: 'var(--ts)',
+    tasks: [
+      { id: 'ts_1', text: 'First priority: support ROV team until build is complete, then take ownership of all safety protocols' },
+    ]
+  },
+];
+
+// ── COUNTDOWN ──
+function updateCountdown() {
+  const regional = new Date('2026-05-01');
+  const now = new Date();
+  const diff = Math.ceil((regional - now) / (1000 * 60 * 60 * 24));
+  document.getElementById('daysLeft').textContent = diff > 0 ? diff : '0';
+}
+updateCountdown();
+
+// ── CHECKBOX STATE ──
+let checkState = {};
+
+async function loadState() {
+  const { data } = await client.from('checkbox_state').select('id, checked');
+  if (data) data.forEach(r => { checkState[r.id] = r.checked; });
+}
+
+async function toggleCheck(id) {
+  const newVal = !checkState[id];
+  checkState[id] = newVal;
+  updateCheckUI(id, newVal);
+  updateProgress();
+
+  const { data } = await client.from('checkbox_state').select('id').eq('id', id);
+  if (data && data.length > 0) {
+    await client.from('checkbox_state').update({ checked: newVal, updated_at: new Date().toISOString() }).eq('id', id);
+  } else {
+    await client.from('checkbox_state').insert({ id, checked: newVal });
+  }
+}
+
+function updateCheckUI(id, checked) {
+  const item = document.querySelector(`[data-task-id="${id}"]`);
+  if (item) item.classList.toggle('checked', checked);
+}
+
+function updateProgress() {
+  TEAMS.forEach(team => {
+    const total = team.tasks.length;
+    const done = team.tasks.filter(t => checkState[t.id]).length;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    const bar = document.querySelector(`#progress-${team.id}`);
+    const lbl = document.querySelector(`#progress-lbl-${team.id}`);
+    if (bar) bar.style.width = pct + '%';
+    if (lbl) lbl.textContent = `${done}/${total} tasks complete`;
+  });
+}
+
+// ── RENDER TEAMS ──
+function renderTeams() {
+  const grid = document.getElementById('teamsGrid');
+  grid.innerHTML = '';
+
+  TEAMS.forEach(team => {
+    const total = team.tasks.length;
+    const done = team.tasks.filter(t => checkState[t.id]).length;
+    const pct = total ? Math.round((done / total) * 100) : 0;
+
+    const card = document.createElement('div');
+    card.className = 'team-card';
+
+    const taskHTML = team.tasks.map(task => `
+      <div class="task-item ${checkState[task.id] ? 'checked' : ''}" data-task-id="${task.id}">
+        <div class="task-checkbox">
+          <svg viewBox="0 0 12 12"><polyline points="1,6 4.5,9.5 11,2"/></svg>
+        </div>
+        <span class="task-text">${task.text}</span>
+      </div>
+    `).join('');
+
+    card.innerHTML = `
+      <div class="team-card-header">
+        <div class="team-accent" style="background:${team.accent};"></div>
+        <div class="team-meta">
+          <div class="team-label" style="color:${team.accent};">${team.label}</div>
+          <div class="team-name">${team.name}</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="progress-${team.id}" style="width:${pct}%;background:${team.accent};"></div>
+          </div>
+          <div class="progress-label" id="progress-lbl-${team.id}">${done}/${total} tasks complete</div>
+        </div>
+      </div>
+      <div class="task-list">${taskHTML}</div>
+    `;
+
+    card.querySelectorAll('.task-item').forEach(item => {
+      item.addEventListener('click', () => toggleCheck(item.dataset.taskId));
+    });
+
+    grid.appendChild(card);
+  });
+}
+
+// ── TOGGLES ──
+document.getElementById('scoreBannerToggle').addEventListener('click', function() {
+  this.classList.toggle('open');
+  document.getElementById('scoreGrid').classList.toggle('open');
+});
+document.getElementById('resourcesToggle').addEventListener('click', function() {
+  this.classList.toggle('open');
+  document.getElementById('resourcesGrid').classList.toggle('open');
+});
+
+// ── INIT ──
+async function init() {
+  await loadState();
+  renderTeams();
+  document.getElementById('loadingOverlay').classList.add('hidden');
+}
+init();
+</script>
+</body>
+</html>
